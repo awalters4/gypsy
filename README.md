@@ -1,27 +1,56 @@
-# Tarot Reader
+# Gypsy - Tarot Reading Application
 
-An AI-powered tarot reading application that learns from user feedback to provide increasingly accurate and resonant interpretations.
+A full-stack web application for AI-powered tarot card readings. Gypsy provides personalized tarot interpretations using advanced AI, supporting both random card draws and manual selection with physical card image uploads.
+
+## Overview
+
+Gypsy is a complete tarot reading platform that combines traditional tarot wisdom with modern AI technology. Users can perform readings using various spread types, receive AI-generated interpretations, and track their reading history.
 
 ## Features
 
-- **Manual Card Input**: Users input the cards they've drawn from their physical deck
-- **Multiple Spread Types**: Support for various spreads (Single Card, 3-Card, Celtic Cross, etc.)
-- **Deck-Specific Meanings**: Store and use different interpretations for different tarot decks
-- **AI-Powered Interpretations**: Uses Claude AI to generate personalized, contextual readings
-- **Learning System**: Improves over time based on user feedback
-- **Image Support**: Upload and display card images for visual reference
+### Reading Modes
+- **Random Draw Mode**: Automatically draws random cards from the selected tarot deck
+- **Custom Reading Mode**: Input your own card readings
+  - Type in card names (one per line) from your physical deck
+  - Indicate reversed cards by adding "(reversed)" after the card name
+  - Upload a single photo of your entire card spread for visual reference
+  - Perfect for users who prefer traditional card readings with AI-powered interpretation
+
+### Core Features
+- **Multiple Spread Types**: Support for various spreads including:
+  - Single Card readings
+  - 3-Card spreads (Past, Present, Future)
+  - Celtic Cross
+  - And more custom spread configurations
+- **Deck Support**: Currently includes the Rider-Waite tarot deck with full card meanings
+- **AI-Powered Interpretations**: Contextual, personalized readings based on:
+  - Selected cards and positions
+  - Card orientation (upright/reversed)
+  - User's question or intention
+  - Spread-specific position meanings
+- **Reading History**: All readings are stored in the database for future reference
+- **Feedback System**: Rate and provide feedback on readings for quality tracking
 
 ## Tech Stack
 
 ### Backend
-- Node.js + Express + TypeScript
-- PostgreSQL database
-- Anthropic Claude API for interpretations
+- **Runtime**: Node.js with Express framework
+- **Language**: TypeScript for type safety
+- **Database**: PostgreSQL 14+ with full schema and seed data
+- **AI Integration**: Anthropic API for natural language interpretation generation
+- **Architecture**: RESTful API design with proper error handling and CORS support
 
 ### Frontend
-- React + TypeScript
-- Vite for development
-- (To be enhanced with UI library)
+- **Framework**: React 19+ with TypeScript
+- **Build Tool**: Vite for fast development and optimized builds
+- **Styling**: Custom CSS with dark theme and responsive design
+- **State Management**: React hooks (useState, useEffect)
+- **File Handling**: Native FileReader API for image uploads
+
+### Development
+- **Backend Dev Server**: Nodemon with tsx for hot reload
+- **Frontend Dev Server**: Vite dev server with HMR (Hot Module Replacement)
+- **Type Checking**: TypeScript strict mode across both frontend and backend
 
 ## Setup Instructions
 
@@ -83,12 +112,53 @@ The API will be available at `http://localhost:3001`
 cd frontend
 ```
 
-2. Start the development server:
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+The app will be available at `http://localhost:5174` (or next available port)
+
+## How to Use
+
+### Performing a Reading
+
+#### Random Draw Mode (Default)
+1. Open the application in your browser
+2. Select a tarot deck from the dropdown (currently Rider-Waite)
+3. Choose a spread type (e.g., 3-Card, Celtic Cross)
+4. Optionally, enter a question or intention for the reading
+5. Click "Draw Cards" to randomly select cards
+6. Review the drawn cards with their positions and meanings
+7. Click "Get Interpretation" to receive an AI-generated reading
+8. Read your personalized interpretation
+9. Click "New Reading" to start fresh
+
+#### Custom Reading Mode
+1. Click the "Custom Reading" button at the top
+2. Select a tarot deck (optional - helps with card matching)
+3. Type your cards in the text area, one per line:
+   ```
+   The Fool
+   The Magician (reversed)
+   The High Priestess
+   ```
+4. Optionally upload a photo of your entire card spread
+5. Click "Submit Reading"
+6. Review your cards with their meanings
+7. Click "Get Interpretation" for your AI-powered reading
+8. View the interpretation alongside your uploaded spread photo
+
+**Card Input Format:**
+- Enter card names exactly as they appear (e.g., "The Fool", "Ace of Cups")
+- Add "(reversed)" or "- reversed" after the card name for reversed cards
+- One card per line
+- The app will automatically match card names from the database
 
 ## API Endpoints
 
@@ -134,44 +204,78 @@ The app will be available at `http://localhost:5173`
 - `readings` - Stored reading sessions
 - `reading_feedback` - User feedback for learning
 
-## Development Roadmap
+## Project Status
 
-### Phase 1 (Current - Week 1)
-- [x] Project setup
-- [x] Database schema
-- [x] Basic API routes
-- [x] Seed data for Rider-Waite deck
-- [ ] Basic frontend UI
+### Completed Features ✅
+- Full-stack application setup (React + Node.js + PostgreSQL)
+- Complete database schema with seed data
+- Rider-Waite tarot deck with all 78 cards and meanings
+- Multiple spread types (Single Card, 3-Card, Celtic Cross, etc.)
+- Random card draw functionality
+- Custom reading input mode (text-based card entry)
+- Single spread photo upload capability
+- AI-powered interpretation generation
+- Intelligent card name parsing (handles reversed notation)
+- Reading storage and history
+- Feedback system foundation
+- Responsive dark-themed UI
+- TypeScript across frontend and backend
+- RESTful API with full CRUD operations
 
-### Phase 2 (Week 2-3)
-- [ ] Card input form
-- [ ] Spread selection
-- [ ] Reading generation
-- [ ] Display interpretations
+### In Progress 🚧
+- Enhanced learning algorithm based on feedback data
+- User authentication and accounts
+- Reading journal features
 
-### Phase 3 (Week 4)
-- [ ] Feedback system
-- [ ] Reading history
-- [ ] User authentication
-
-### Phase 4 (Week 5)
-- [ ] Multiple deck support
-- [ ] Image uploads (Cloudflare R2/Imgur)
-- [ ] Deck management UI
-
-### Phase 6 (Week 6)
-- [ ] Enhanced learning algorithm
-- [ ] Analytics dashboard
-- [ ] Deployment
-
-## Future Enhancements
-
-- Reversed card interpretations
-- Daily card notifications
-- Reading journal
+### Planned Features 📋
+- Additional tarot deck support (add your own decks)
+- Daily card notifications/reminders
 - Export readings as PDF
-- Share readings with friends
-- Mobile app version
+- Social sharing capabilities
+- Analytics dashboard for reading patterns
+- Mobile-responsive improvements
+- Deck management UI for adding custom decks
+- Card image hosting integration
+- Advanced filtering for reading history
+
+## Project Structure
+
+```
+tarot-reader/
+├── backend/
+│   ├── src/
+│   │   ├── database/
+│   │   │   ├── schema.sql          # Database schema
+│   │   │   ├── db.ts               # Database connection
+│   │   │   └── seeds/              # Seed data files
+│   │   ├── routes/                 # API route handlers
+│   │   │   ├── cards.ts
+│   │   │   ├── decks.ts
+│   │   │   ├── spreads.ts
+│   │   │   ├── readings.ts
+│   │   │   └── interpret.ts
+│   │   ├── services/
+│   │   │   └── interpretationService.ts  # AI integration
+│   │   └── index.ts                # Express app entry
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   └── TarotReading.tsx    # Main reading component
+│   │   ├── services/
+│   │   │   └── api.ts              # API client
+│   │   ├── types/
+│   │   │   └── index.ts            # TypeScript interfaces
+│   │   ├── App.tsx
+│   │   ├── App.css
+│   │   └── main.tsx
+│   ├── package.json
+│   └── vite.config.ts
+│
+└── README.md
+```
 
 ## License
 
