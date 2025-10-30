@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+*.log
+.DS_Store
+
+# Database
+*.db
+*.sqlite
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
