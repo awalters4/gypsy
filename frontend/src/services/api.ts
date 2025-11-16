@@ -10,6 +10,11 @@ import type {
   FollowUpResponse,
   CardExplanation,
   DrawnCard,
+  DeckCreate,
+  DeckUpdate,
+  CardMeaningBulk,
+  CardMeaningUpdate,
+  BulkUploadResponse,
 } from '../types/index';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -25,6 +30,110 @@ export const api = {
   async getDeck(id: number): Promise<Deck> {
     const response = await fetch(`${API_BASE_URL}/decks/${id}`);
     if (!response.ok) throw new Error('Failed to fetch deck');
+    return response.json();
+  },
+
+  async createDeck(deckData: DeckCreate): Promise<Deck> {
+    const response = await fetch(`${API_BASE_URL}/decks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(deckData),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create deck');
+    }
+    return response.json();
+  },
+
+  async updateDeck(id: number, deckData: DeckUpdate): Promise<Deck> {
+    const response = await fetch(`${API_BASE_URL}/decks/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(deckData),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update deck');
+    }
+    return response.json();
+  },
+
+  async deleteDeck(id: number): Promise<{ message: string; deck: Deck }> {
+    const response = await fetch(`${API_BASE_URL}/decks/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete deck');
+    }
+    return response.json();
+  },
+
+  async getDeckCardMeanings(deckId: number): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/decks/${deckId}/card-meanings`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch card meanings');
+    }
+    return response.json();
+  },
+
+  async bulkUploadCardMeanings(
+    deckId: number,
+    cardMeanings: CardMeaningBulk[]
+  ): Promise<BulkUploadResponse> {
+    const response = await fetch(`${API_BASE_URL}/decks/${deckId}/card-meanings/bulk`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ cardMeanings }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to upload card meanings');
+    }
+    return response.json();
+  },
+
+  async updateCardMeaning(
+    deckId: number,
+    cardId: number,
+    meaningData: CardMeaningUpdate
+  ): Promise<any> {
+    const response = await fetch(
+      `${API_BASE_URL}/decks/${deckId}/card-meanings/${cardId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(meaningData),
+      }
+    );
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update card meaning');
+    }
+    return response.json();
+  },
+
+  async deleteCardMeaning(deckId: number, cardId: number): Promise<{ message: string }> {
+    const response = await fetch(
+      `${API_BASE_URL}/decks/${deckId}/card-meanings/${cardId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete card meaning');
+    }
     return response.json();
   },
 

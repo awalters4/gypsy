@@ -92,3 +92,36 @@ export interface CardExplanation {
   explanation: string;
   card: CardContext;
 }
+
+// Deck management types
+export interface DeckCreate {
+  name: string;
+  description?: string;
+  imagery_style?: string;
+}
+
+export interface DeckUpdate {
+  name: string;
+  description?: string;
+  imagery_style?: string;
+}
+
+export interface CardMeaningBulk {
+  cardId: number;
+  uprightMeaning: string;
+  reversedMeaning?: string;
+  uprightKeywords?: string[];
+  reversedKeywords?: string[];
+}
+
+export interface CardMeaningUpdate {
+  uprightMeaning: string;
+  reversedMeaning?: string;
+  uprightKeywords?: string[];
+  reversedKeywords?: string[];
+}
+
+export interface BulkUploadResponse {
+  message: string;
+  cardMeanings: any[];
+}
