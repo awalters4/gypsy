@@ -1,133 +1,273 @@
-# Gypsy - AI-Powered Tarot Reading Platform
+# Gypsy Mobile 🔮📱
 
-A modern, full-stack tarot reading application with advanced AI interpretations. Supports both web-based readings and will soon include a native mobile app.
+React Native mobile app for Gypsy - the AI-powered tarot reading platform.
 
-## 🎴 What is Gypsy?
+## About
 
-Gypsy combines traditional tarot wisdom with cutting-edge AI technology to provide personalized, insightful tarot readings. Whether you're drawing cards digitally or reading from a physical deck, Gypsy offers intelligent interpretations powered by Claude AI.
+Gypsy Mobile brings the power of AI-enhanced tarot readings to your iOS and Android devices. Built with React Native and Expo, it connects to the same backend API as the web version to provide personalized tarot interpretations powered by Claude AI.
 
-## ✨ Key Features
+## Features
 
-### AI-Powered Interpretations
-- **Streaming Responses**: Real-time AI interpretation generation with smooth streaming
-- **Tone Preferences**: Choose from warm, direct, mystical, or analytical reading styles
-- **Question Refinement**: AI helps you craft better, more focused questions
-- **Follow-Up Questions**: Continue the conversation with context-aware follow-ups
-- **Card Explanations**: Click any card for detailed symbolism and meaning
-- **Context Preview**: See what information the AI will use before generating interpretations
+✨ **AI-Powered Readings**
+- Streaming interpretations from Claude AI
+- Multiple tone preferences (warm, direct, mystical, analytical)
+- Context-aware card explanations
 
-### Multiple Reading Modes
-- **Random Draw**: Let the cards choose themselves
-- **Custom Reading**: Input cards from your physical deck
-- **Photo Upload**: Capture your card spread for reference
-
-### Multiple Decks
+🎴 **Multiple Decks**
 - Rider-Waite (Traditional)
 - Marseille Tarot (Classic French)
-- Thoth Tarot (Crowley's Occult Deck)
+- Thoth Tarot (Crowley's Occult)
 - Wild Unknown (Nature & Animals)
 - Modern Witch (Contemporary Urban)
 
-### Spread Types
+📐 **Spread Types**
 - Single Card
 - 3-Card (Past, Present, Future)
 - Celtic Cross
-- And more custom spreads
+- And more
 
-## 🏗️ Project Structure
+🎨 **Beautiful UI**
+- Dark themed interface
+- Smooth animations
+- Intuitive navigation
+- Responsive design
 
-This is a **monorepo** containing:
+## Tech Stack
 
-```
-gypsy/
-├── backend/          # Express API server (Node.js + TypeScript)
-├── frontend/         # React web app (Vite + TypeScript)
-├── vercel.json       # Frontend deployment config
-└── DEPLOYMENT.md     # Deployment instructions
-```
+- **React Native** - Cross-platform mobile framework
+- **Expo** - Development platform and toolchain
+- **TypeScript** - Type-safe code
+- **React Navigation** - Native navigation
+- **Axios** - API client
+- **Claude AI** - Natural language interpretations
 
-**Related Projects:**
-- **gypsy-mobile** (Coming Soon) - React Native mobile app
+## Prerequisites
 
-## 🚀 Quick Start
-
-### Prerequisites
 - Node.js 18+
-- PostgreSQL 14+
-- Anthropic API key ([Get one here](https://console.anthropic.com))
+- npm or yarn
+- Expo CLI (`npm install -g expo-cli`)
+- iOS Simulator (Mac only) or Android Studio
+- Expo Go app (for testing on physical devices)
 
-### Backend Setup
+## Setup
+
+### 1. Install Dependencies
 
 ```bash
+npm install
+```
+
+### 2. Configure API Endpoint
+
+Edit `src/services/api.ts` and set your API URL:
+
+```typescript
+const API_BASE_URL = __DEV__
+  ? 'http://YOUR_LOCAL_IP:3001/api'  // Replace with your computer's local IP
+  : 'https://tarot-reader.vercel.app/api';
+```
+
+**Finding your local IP:**
+- **Mac**: System Preferences → Network
+- **Windows**: `ipconfig` in Command Prompt
+- **Linux**: `ifconfig` or `ip addr`
+
+**Example**: `http://192.168.1.100:3001/api`
+
+### 3. Start the Backend
+
+Make sure the Gypsy API backend is running:
+
+```bash
+# In the main gypsy repo
 cd backend
-npm install
-cp .env.example .env
-# Edit .env with your credentials
 npm run dev
 ```
 
-### Frontend Setup
+The API should be running at `http://localhost:3001`
+
+## Running the App
+
+### Start Expo Development Server
 
 ```bash
-cd frontend
-npm install
-npm run dev
+npm start
 ```
 
-Visit `http://localhost:5173` to see the app!
+This opens the Expo Developer Tools in your browser.
 
-## 📖 Full Documentation
+### Run on iOS Simulator (Mac only)
 
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete deployment guide for Vercel
-- **[Backend README](./backend/README.md)** - API documentation
-- **[Frontend README](./frontend/README.md)** - UI component documentation
+```bash
+npm run ios
+```
 
-## 🎯 API Endpoints
+Or press `i` in the Expo Developer Tools.
 
-### Core Endpoints
-- `GET /api/decks` - List all tarot decks
-- `GET /api/spreads` - List all spread types
-- `POST /api/readings` - Create a new reading
-- `POST /api/interpret/stream` - Get streaming AI interpretation
+### Run on Android Emulator
 
-### AI Features
-- `POST /api/interpret/refine-question` - Improve your question
-- `POST /api/interpret/follow-up` - Ask follow-up questions
-- `POST /api/interpret/explain-card` - Get card-specific insights
-- `GET /api/interpret/context` - Preview AI context
+```bash
+npm run android
+```
 
-### Deck Management
-- `POST /api/decks` - Create custom deck
-- `POST /api/decks/:id/card-meanings/bulk` - Upload card meanings
-- Full CRUD for decks and card meanings
+Or press `a` in the Expo Developer Tools.
 
-## 🛠️ Tech Stack
+Make sure Android Studio is installed and an emulator is running.
 
-**Backend:**
-- Node.js + Express
-- TypeScript
-- PostgreSQL
-- Anthropic Claude API
-- Server-Sent Events (SSE) for streaming
+### Run on Physical Device
 
-**Frontend:**
-- React 19
-- TypeScript
-- Vite
-- Custom CSS with animations
+1. Install **Expo Go** from App Store (iOS) or Play Store (Android)
+2. Scan the QR code shown in the terminal or Expo Developer Tools
+3. App will load on your device
 
-**Deployment:**
-- Vercel (Frontend + Backend)
-- Vercel Postgres (Database)
+**Note**: Your phone and computer must be on the same WiFi network.
 
-## 📱 Mobile App (Coming Soon)
+## Project Structure
 
-A React Native version is in development at **well-walt-studios/gypsy-mobile**
+```
+gypsy-mobile/
+├── src/
+│   ├── screens/
+│   │   ├── HomeScreen.tsx          # Deck & spread selection
+│   │   ├── ReadingScreen.tsx       # Card drawing
+│   │   └── ResultsScreen.tsx       # AI interpretation
+│   ├── services/
+│   │   └── api.ts                  # API client
+│   ├── types/
+│   │   └── index.ts                # TypeScript types
+│   ├── components/                 # Reusable components
+│   └── constants/
+│       └── theme.ts                # Colors, spacing, etc.
+├── App.tsx                         # Main app & navigation
+├── app.json                        # Expo configuration
+└── package.json                    # Dependencies
+```
 
-## 🤝 Contributing
+## Screens
 
-This is a personal project, but feedback and suggestions are welcome!
+### 1. Home Screen
+- Choose your tarot deck
+- Select spread type
+- Optionally enter a question
+- Begin reading
 
-## 📄 License
+### 2. Reading Screen
+- View drawn cards
+- See position meanings
+- Check for reversed cards
+- Request AI interpretation
+
+### 3. Results Screen
+- Read personalized interpretation
+- Review cards in the reading
+- Start a new reading
+
+## Configuration
+
+### API Base URL
+
+Development (local testing):
+```typescript
+'http://192.168.1.100:3001/api'  // Your computer's local IP
+```
+
+Production (deployed app):
+```typescript
+'https://tarot-reader.vercel.app/api'
+```
+
+### Theme Customization
+
+Edit `src/constants/theme.ts` to customize:
+- Colors
+- Spacing
+- Font sizes
+- Border radius
+- Shadows
+
+## Building for Production
+
+### iOS (Requires Mac + Apple Developer Account)
+
+```bash
+# Build with EAS
+eas build --platform ios
+
+# Or create local build
+expo build:ios
+```
+
+### Android
+
+```bash
+# Build with EAS
+eas build --platform android
+
+# Or create local build
+expo build:android
+```
+
+## Related Projects
+
+- **[gypsy](https://github.com/awalters4/gypsy)** - Web app + Backend API (monorepo)
+- **[gypsy-mobile](https://github.com/well-walt-studios/gypsy-mobile)** - This mobile app
+
+## API Documentation
+
+See the main [Gypsy repository](https://github.com/awalters4/gypsy) for complete API documentation.
+
+### Key Endpoints Used
+
+- `GET /api/decks` - Get all tarot decks
+- `GET /api/spreads` - Get all spread types
+- `GET /api/cards` - Get cards (optionally filtered by deck)
+- `POST /api/interpret` - Get AI interpretation
+- `POST /api/readings` - Create a reading record
+
+## Development Tips
+
+### Debugging
+
+- Shake your device to open the dev menu
+- Enable Remote JS Debugging
+- Use React Native Debugger
+
+### Hot Reload
+
+Code changes automatically reload in the app. If something breaks:
+- Press `r` in terminal to reload
+- Or shake device → Reload
+
+### Common Issues
+
+**"Unable to resolve module"**
+- Clear cache: `expo start -c`
+- Reinstall: `rm -rf node_modules && npm install`
+
+**"Network request failed"**
+- Check API URL in `api.ts`
+- Ensure backend is running
+- Verify phone and computer are on same network
+- Use your local IP, not `localhost`
+
+**iOS/Android build fails**
+- Update Expo: `npm install expo@latest`
+- Clear cache: `expo start -c`
+
+## Contributing
+
+This is a companion app to the main Gypsy project. See the main repo for contribution guidelines.
+
+## License
 
 MIT
+
+## Support
+
+For issues or questions:
+- Open an issue on GitHub
+- Check the main [Gypsy repository](https://github.com/awalters4/gypsy)
+
+---
+
+Made with 💜 by Well Walt Studios
