@@ -9,6 +9,13 @@ import interpretRouter from './routes/interpret';
 
 dotenv.config();
 
+// Validate required environment variables
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error('❌ Error: ANTHROPIC_API_KEY environment variable is required');
+  console.error('Please set ANTHROPIC_API_KEY in your .env file');
+  process.exit(1);
+}
+
 const app: Express = express();
 const port = process.env.PORT || 3001;
 

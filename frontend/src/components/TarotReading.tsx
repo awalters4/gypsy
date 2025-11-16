@@ -6,6 +6,9 @@ import type {
   Card,
   DrawnCard,
   InterpretationResponse,
+  TonePreference,
+  AIContextPreview,
+  QuestionRefinement,
 } from '../types/index';
 
 const COOLDOWN_MINUTES = 5; // Cooldown period in minutes
@@ -18,14 +21,32 @@ export default function TarotReading() {
   const [selectedDeck, setSelectedDeck] = useState<number | null>(null);
   const [selectedSpread, setSelectedSpread] = useState<number | null>(null);
   const [question, setQuestion] = useState('');
+  const [refinedQuestion, setRefinedQuestion] = useState<QuestionRefinement | null>(null);
+  const [tone, setTone] = useState<TonePreference>('warm');
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [customCardInput, setCustomCardInput] = useState('');
   const [spreadImage, setSpreadImage] = useState<string>('');
   const [result, setResult] = useState<InterpretationResponse | null>(null);
+  const [streamingText, setStreamingText] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [readingId, setReadingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+
+  // New features state
+  const [showContext, setShowContext] = useState(false);
+  const [aiContext, setAiContext] = useState<AIContextPreview | null>(null);
+  const [showQuestionRefine, setShowQuestionRefine] = useState(false);
+  const [refiningQuestion, setRefiningQuestion] = useState(false);
+  const [followUpQuestion, setFollowUpQuestion] = useState('');
+  const [followUpAnswer, setFollowUpAnswer] = useState<string | null>(null);
+  const [loadingFollowUp, setLoadingFollowUp] = useState(false);
+  const [selectedCardForExplanation, setSelectedCardForExplanation] = useState<number | null>(null);
+  const [cardExplanation, setCardExplanation] = useState<string | null>(null);
+  const [loadingCardExplanation, setLoadingCardExplanation] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   // Load initial data
   useEffect(() => {
@@ -116,9 +137,54 @@ export default function TarotReading() {
 
     setDrawnCards(drawn);
     setResult(null);
+    setStreamingText('');
+    setReadingId(null);
+    setFollowUpAnswer(null);
+    setCardExplanation(null);
     setError(null);
   };
 
+  // Fetch AI context preview
+  const fetchAIContext = async () => {
+    if (!selectedDeck || !selectedSpread || drawnCards.length === 0) return;
+
+    try {
+      const context = await api.getAIContext(selectedSpread, selectedDeck, drawnCards);
+      setAiContext(context);
+      setShowContext(true);
+    } catch (err) {
+      console.error('Failed to fetch AI context:', err);
+    }
+  };
+
+  // Refine question with AI
+  const handleRefineQuestion = async () => {
+    if (!question.trim()) {
+      setError('Please enter a question first');
+      return;
+    }
+
+    setRefiningQuestion(true);
+    try {
+      const refinement = await api.refineQuestion(question);
+      setRefinedQuestion(refinement);
+      setShowQuestionRefine(true);
+    } catch (err) {
+      setError('Failed to refine question');
+      console.error(err);
+    } finally {
+      setRefiningQuestion(false);
+    }
+  };
+
+  const useRefinedQuestion = () => {
+    if (refinedQuestion) {
+      setQuestion(refinedQuestion.refined);
+      setShowQuestionRefine(false);
+    }
+  };
+
+  // Get streaming interpretation
   const getInterpretation = async () => {
     if (!selectedDeck || !selectedSpread || drawnCards.length === 0) {
       setError('Please draw cards first');
@@ -131,26 +197,83 @@ export default function TarotReading() {
     }
 
     setLoading(true);
+    setIsStreaming(true);
+    setStreamingText('');
+    setError(null);
+    setResult(null);
+    setReadingId(null);
+
+    try {
+      await api.generateStreamingInterpretation(
+        {
+          spreadTypeId: selectedSpread,
+          deckId: selectedDeck,
+          question: question || undefined,
+          cardsDrawn: drawnCards,
+          tone,
+        },
+        (chunk) => {
+          setStreamingText((prev) => prev + chunk);
+        },
+        (id) => {
+          setReadingId(id);
+          setIsStreaming(false);
+          setLoading(false);
+
+          // Set cooldown
+          const cooldownTime = Date.now() + (COOLDOWN_MINUTES * 60 * 1000);
+          setCooldownUntil(cooldownTime);
+          localStorage.setItem('tarotCooldown', cooldownTime.toString());
+        },
+        (errorMsg) => {
+          setError(errorMsg);
+          setIsStreaming(false);
+          setLoading(false);
+        }
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate interpretation');
+      setIsStreaming(false);
+      setLoading(false);
+    }
+  };
+
+  // Ask follow-up question
+  const askFollowUp = async () => {
+    if (!readingId || !followUpQuestion.trim()) {
+      setError('Please enter a follow-up question');
+      return;
+    }
+
+    setLoadingFollowUp(true);
     setError(null);
 
     try {
-      const response = await api.generateInterpretation({
-        spreadTypeId: selectedSpread,
-        deckId: selectedDeck,
-        question: question || undefined,
-        cardsDrawn: drawnCards,
-      });
-      setResult(response);
-
-      // Set cooldown
-      const cooldownTime = Date.now() + (COOLDOWN_MINUTES * 60 * 1000);
-      setCooldownUntil(cooldownTime);
-      localStorage.setItem('tarotCooldown', cooldownTime.toString());
+      const response = await api.askFollowUp(readingId, followUpQuestion);
+      setFollowUpAnswer(response.answer);
+      setFollowUpQuestion('');
     } catch (err) {
-      setError('Failed to generate interpretation');
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to answer follow-up question');
     } finally {
-      setLoading(false);
+      setLoadingFollowUp(false);
+    }
+  };
+
+  // Explain specific card
+  const explainCard = async (position: number) => {
+    if (!readingId) return;
+
+    setLoadingCardExplanation(true);
+    setSelectedCardForExplanation(position);
+    setCardExplanation(null);
+
+    try {
+      const response = await api.explainCard(readingId, position);
+      setCardExplanation(response.explanation);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to explain card');
+    } finally {
+      setLoadingCardExplanation(false);
     }
   };
 
@@ -159,7 +282,17 @@ export default function TarotReading() {
     setCustomCardInput('');
     setSpreadImage('');
     setResult(null);
+    setStreamingText('');
+    setReadingId(null);
     setQuestion('');
+    setRefinedQuestion(null);
+    setShowQuestionRefine(false);
+    setFollowUpAnswer(null);
+    setFollowUpQuestion('');
+    setCardExplanation(null);
+    setSelectedCardForExplanation(null);
+    setShowContext(false);
+    setAiContext(null);
     setError(null);
   };
 
@@ -207,7 +340,7 @@ export default function TarotReading() {
         reversed = true;
       }
 
-      // Normalize abbreviations (e.g., "10 of pents" -> "ten of pentacles")
+      // Normalize abbreviations
       let normalizedName = cardName;
 
       // Replace suit abbreviations
@@ -216,7 +349,7 @@ export default function TarotReading() {
         normalizedName = normalizedName.replace(regex, full);
       });
 
-      // Replace number shortcuts (e.g., "10" -> "Ten")
+      // Replace number shortcuts
       const numberMap: Record<string, string> = {
         '1': 'Ace', '2': 'Two', '3': 'Three', '4': 'Four', '5': 'Five',
         '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine', '10': 'Ten'
@@ -226,7 +359,7 @@ export default function TarotReading() {
         normalizedName = normalizedName.replace(regex, word);
       });
 
-      // Find matching card (try exact match first, then normalized)
+      // Find matching card
       let card = cards.find(c =>
         c.name.toLowerCase() === cardName.toLowerCase()
       );
@@ -264,11 +397,22 @@ export default function TarotReading() {
 
     setDrawnCards(drawn);
     setResult(null);
+    setStreamingText('');
+    setReadingId(null);
+    setFollowUpAnswer(null);
+    setCardExplanation(null);
     setError(null);
   };
 
   const getCardById = (cardId: number): Card | undefined => {
     return cards.find((c) => c.id === cardId);
+  };
+
+  const toneDescriptions: Record<TonePreference, string> = {
+    warm: 'Warm & Empowering',
+    direct: 'Direct & Practical',
+    mystical: 'Mystical & Poetic',
+    analytical: 'Analytical & Psychological',
   };
 
   return (
@@ -334,16 +478,58 @@ export default function TarotReading() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="question">Your Question (optional):</label>
-          <input
-            id="question"
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="What would you like guidance on?"
+          <label htmlFor="tone">Interpretation Style:</label>
+          <select
+            id="tone"
+            value={tone}
+            onChange={(e) => setTone(e.target.value as TonePreference)}
             disabled={loading}
-          />
+          >
+            {Object.entries(toneDescriptions).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
         </div>
+
+        <div className="form-group question-group">
+          <label htmlFor="question">Your Question (optional):</label>
+          <div className="question-input-wrapper">
+            <input
+              id="question"
+              type="text"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="What would you like guidance on?"
+              disabled={loading}
+            />
+            {question.trim() && (
+              <button
+                onClick={handleRefineQuestion}
+                disabled={refiningQuestion || loading}
+                className="refine-btn"
+                title="Get AI help to refine your question"
+              >
+                {refiningQuestion ? '...' : '✨'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {showQuestionRefine && refinedQuestion && (
+          <div className="question-refinement">
+            <p><strong>AI suggests:</strong> {refinedQuestion.refined}</p>
+            <div className="refinement-actions">
+              <button onClick={useRefinedQuestion} className="use-refined">
+                Use This
+              </button>
+              <button onClick={() => setShowQuestionRefine(false)} className="keep-original">
+                Keep Original
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="actions">
           {mode === 'random' && (
@@ -354,15 +540,25 @@ export default function TarotReading() {
               Draw Cards
             </button>
           )}
-          {drawnCards.length > 0 && !result && (
-            <button
-              onClick={getInterpretation}
-              disabled={loading || (cooldownUntil !== null && cooldownUntil > Date.now())}
-            >
-              {loading ? 'Generating...' : cooldownUntil && cooldownUntil > Date.now() ? `Wait ${timeRemaining}` : 'Get Interpretation'}
-            </button>
+          {drawnCards.length > 0 && !streamingText && !readingId && (
+            <>
+              <button
+                onClick={fetchAIContext}
+                disabled={loading}
+                className="preview-btn"
+                title="Preview what the AI will see"
+              >
+                Preview AI Context
+              </button>
+              <button
+                onClick={getInterpretation}
+                disabled={loading || (cooldownUntil !== null && cooldownUntil > Date.now())}
+              >
+                {loading ? 'Generating...' : cooldownUntil && cooldownUntil > Date.now() ? `Wait ${timeRemaining}` : 'Get Interpretation'}
+              </button>
+            </>
           )}
-          {(drawnCards.length > 0 || result) && (
+          {(drawnCards.length > 0 || streamingText || readingId) && (
             <button onClick={resetReading} disabled={loading}>
               New Reading
             </button>
@@ -408,6 +604,38 @@ export default function TarotReading() {
         </div>
       )}
 
+      {/* AI Context Preview */}
+      {showContext && aiContext && (
+        <div className="ai-context-preview">
+          <h2>AI Context Preview</h2>
+          <div className="context-info">
+            <p><strong>Spread:</strong> {aiContext.spread.name}</p>
+            {aiContext.spread.description && (
+              <p><strong>Description:</strong> {aiContext.spread.description}</p>
+            )}
+            {aiContext.pastReadingsCount > 0 && (
+              <p className="past-readings-badge">
+                💡 Learning from {aiContext.pastReadingsCount} highly-rated past reading{aiContext.pastReadingsCount > 1 ? 's' : ''}
+              </p>
+            )}
+            <h3>Cards Being Analyzed:</h3>
+            <ul className="context-cards">
+              {aiContext.cards.map((card, idx) => (
+                <li key={idx}>
+                  <strong>Position {idx + 1} - {card.position}:</strong> {card.card}
+                  {card.reversed && ' (Reversed)'}
+                  <br />
+                  <em>{card.positionMeaning}</em>
+                  <br />
+                  Keywords: {card.keywords.join(', ')}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <button onClick={() => setShowContext(false)}>Close Preview</button>
+        </div>
+      )}
+
       {drawnCards.length > 0 && (
         <div className="drawn-cards">
           <h2>Your Cards</h2>
@@ -418,7 +646,11 @@ export default function TarotReading() {
               return (
                 <div
                   key={drawnCard.cardId + '-' + drawnCard.position}
-                  className={'card' + (drawnCard.reversed ? ' reversed' : '')}
+                  className={'card' + (drawnCard.reversed ? ' reversed' : '') + (hoveredCard === drawnCard.position ? ' highlighted' : '')}
+                  onMouseEnter={() => setHoveredCard(drawnCard.position)}
+                  onMouseLeave={() => setHoveredCard(null)}
+                  onClick={() => readingId && explainCard(drawnCard.position)}
+                  title={readingId ? 'Click for detailed explanation' : `${card.name}\nKeywords: ${(drawnCard.reversed ? card.keywords : card.keywords).slice(0, 3).join(', ')}`}
                 >
                   <div className="card-position">Position {drawnCard.position}</div>
                   <h3>{card.name}</h3>
@@ -430,6 +662,11 @@ export default function TarotReading() {
                       ? card.reversed_meaning
                       : card.upright_meaning}
                   </p>
+                  {readingId && (
+                    <button className="explain-card-btn">
+                      {loadingCardExplanation && selectedCardForExplanation === drawnCard.position ? 'Loading...' : 'Explain This Card'}
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -437,10 +674,56 @@ export default function TarotReading() {
         </div>
       )}
 
-      {result && (
+      {/* Card Explanation Modal */}
+      {cardExplanation && selectedCardForExplanation && (
+        <div className="card-explanation-modal">
+          <div className="modal-content">
+            <h2>Card Explanation - Position {selectedCardForExplanation}</h2>
+            <div className="explanation-text">{cardExplanation}</div>
+            <button onClick={() => { setCardExplanation(null); setSelectedCardForExplanation(null); }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Streaming Interpretation */}
+      {(isStreaming || streamingText) && (
         <div className="interpretation">
           <h2>Interpretation</h2>
-          <div className="interpretation-text">{result.interpretation}</div>
+          <div className="interpretation-text streaming">
+            {streamingText}
+            {isStreaming && <span className="cursor">▊</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Follow-up Questions */}
+      {readingId && streamingText && !isStreaming && (
+        <div className="follow-up-section">
+          <h3>Ask a Follow-up Question</h3>
+          <div className="follow-up-input-wrapper">
+            <input
+              type="text"
+              value={followUpQuestion}
+              onChange={(e) => setFollowUpQuestion(e.target.value)}
+              placeholder="Ask for clarification or more detail..."
+              disabled={loadingFollowUp}
+            />
+            <button
+              onClick={askFollowUp}
+              disabled={!followUpQuestion.trim() || loadingFollowUp}
+            >
+              {loadingFollowUp ? 'Asking...' : 'Ask'}
+            </button>
+          </div>
+
+          {followUpAnswer && (
+            <div className="follow-up-answer">
+              <h4>Answer:</h4>
+              <p>{followUpAnswer}</p>
+            </div>
+          )}
         </div>
       )}
     </div>

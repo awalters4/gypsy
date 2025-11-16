@@ -51,9 +51,44 @@ export interface InterpretationRequest {
   deckId: number;
   question?: string;
   cardsDrawn: DrawnCard[];
+  tone?: TonePreference;
 }
 
 export interface InterpretationResponse {
   reading: Reading;
   interpretation: string;
+}
+
+export type TonePreference = 'warm' | 'direct' | 'mystical' | 'analytical';
+
+export interface CardContext {
+  position: string;
+  positionMeaning: string;
+  card: string;
+  reversed: boolean;
+  meaning: string;
+  keywords: string[];
+}
+
+export interface AIContextPreview {
+  spread: {
+    name: string;
+    description: string | null;
+  };
+  cards: CardContext[];
+  pastReadingsCount: number;
+}
+
+export interface QuestionRefinement {
+  original: string;
+  refined: string;
+}
+
+export interface FollowUpResponse {
+  answer: string;
+}
+
+export interface CardExplanation {
+  explanation: string;
+  card: CardContext;
 }
