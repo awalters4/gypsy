@@ -11,18 +11,40 @@ interface CardInReading {
   reversed: boolean;
 }
 
-export async function generateInterpretation(
+export type TonePreference = 'warm' | 'direct' | 'mystical' | 'analytical';
+
+interface CardContext {
+  position: string;
+  positionMeaning: string;
+  card: string;
+  reversed: boolean;
+  meaning: string;
+  keywords: string[];
+}
+
+interface InterpretationContext {
+  spread: any;
+  cardsContext: CardContext[];
+  pastReadingsContext: string;
+  pastReadingsCount: number;
+}
+
+// Fetch context for interpretation (reusable across streaming and non-streaming)
+export async function getInterpretationContext(
   spreadTypeId: number,
   deckId: number,
-  cardsDrawn: CardInReading[],
-  question?: string
-): Promise<string> {
+  cardsDrawn: CardInReading[]
+): Promise<InterpretationContext> {
   // Fetch spread type details
   const spreadResult = await pool.query(
     'SELECT * FROM spread_types WHERE id = $1',
     [spreadTypeId]
   );
   const spread = spreadResult.rows[0];
+
+  if (!spread) {
+    throw new Error(`Spread type with ID ${spreadTypeId} not found`);
+  }
 
   // Fetch card details
   const cardIds = cardsDrawn.map(c => c.cardId);
@@ -40,6 +62,17 @@ export async function generateInterpretation(
   // Build context for AI
   const cardsContext = cardsDrawn.map(drawnCard => {
     const card = cardsResult.rows.find(c => c.id === drawnCard.cardId);
+
+    // Validate card exists
+    if (!card) {
+      throw new Error(`Card with ID ${drawnCard.cardId} not found`);
+    }
+
+    // Validate position is within bounds
+    if (!spread.positions || drawnCard.position > spread.positions.length || drawnCard.position < 1) {
+      throw new Error(`Invalid position ${drawnCard.position} for spread ${spread.name}`);
+    }
+
     const position = spread.positions[drawnCard.position - 1];
 
     return {
@@ -68,7 +101,30 @@ export async function generateInterpretation(
         .join('\n\n')}`
     : '';
 
-  const prompt = `You are an experienced tarot reader. Provide a thoughtful, insightful interpretation for this ${spread.name} reading.
+  return {
+    spread,
+    cardsContext,
+    pastReadingsContext,
+    pastReadingsCount: pastReadingsResult.rows.length,
+  };
+}
+
+// Build the prompt for Claude
+function buildPrompt(
+  context: InterpretationContext,
+  question?: string,
+  tone: TonePreference = 'warm'
+): string {
+  const { spread, cardsContext, pastReadingsContext } = context;
+
+  const toneInstructions = {
+    warm: 'warm, thoughtful, and empowering',
+    direct: 'direct, practical, and straightforward',
+    mystical: 'mystical, poetic, and spiritually evocative',
+    analytical: 'analytical, psychological, and introspective',
+  };
+
+  return `You are an experienced tarot reader. Provide a thoughtful, insightful interpretation for this ${spread.name} reading.
 
 ${question ? `Question: ${question}\n` : ''}
 Spread: ${spread.name}
@@ -83,17 +139,156 @@ Keywords: ${c.keywords.join(', ')}
 `).join('\n')}
 ${pastReadingsContext}
 
-Provide a cohesive, narrative interpretation that:
-1. Considers the relationship between all cards and their positions
-2. Addresses the question if one was asked
-3. Offers practical insights and guidance
-4. Is warm, thoughtful, and empowering
+Provide your interpretation in the following structured format:
 
-Keep the interpretation between 3-5 paragraphs.`;
+**Key Themes:** [1-2 sentence summary of the main themes and energy]
+
+**Card Analysis:**
+${cardsContext.map((c, i) => `
+*Position ${i + 1} - ${c.position}:* [Explain how ${c.card} relates to this position. Rate confidence: Strong/Moderate/Exploratory]`).join('\n')}
+
+**Overall Guidance:**
+[A cohesive narrative (2-3 paragraphs) that weaves all the cards together${question ? ' and directly addresses the question' : ''}]
+
+**Practical Steps:**
+[2-3 specific, actionable insights or suggestions]
+
+Style: ${toneInstructions[tone]}`;
+}
+
+// Generate interpretation (non-streaming)
+export async function generateInterpretation(
+  spreadTypeId: number,
+  deckId: number,
+  cardsDrawn: CardInReading[],
+  question?: string,
+  tone: TonePreference = 'warm'
+): Promise<string> {
+  const context = await getInterpretationContext(spreadTypeId, deckId, cardsDrawn);
+  const prompt = buildPrompt(context, question, tone);
 
   const message = await anthropic.messages.create({
     model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 1024,
+    max_tokens: 2048,
+    messages: [
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+  });
+
+  return message.content[0].type === 'text' ? message.content[0].text : '';
+}
+
+// Generate streaming interpretation
+export async function* generateStreamingInterpretation(
+  spreadTypeId: number,
+  deckId: number,
+  cardsDrawn: CardInReading[],
+  question?: string,
+  tone: TonePreference = 'warm'
+): AsyncGenerator<string> {
+  const context = await getInterpretationContext(spreadTypeId, deckId, cardsDrawn);
+  const prompt = buildPrompt(context, question, tone);
+
+  const stream = await anthropic.messages.stream({
+    model: 'claude-3-5-sonnet-20241022',
+    max_tokens: 2048,
+    messages: [
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+  });
+
+  for await (const chunk of stream) {
+    if (
+      chunk.type === 'content_block_delta' &&
+      chunk.delta.type === 'text_delta'
+    ) {
+      yield chunk.delta.text;
+    }
+  }
+}
+
+// Refine user question with AI assistance
+export async function refineQuestion(question: string): Promise<string> {
+  const prompt = `The user wants to ask this question in a tarot reading: "${question}"
+
+Suggest a more effective way to phrase this question that:
+1. Is open-ended rather than yes/no
+2. Focuses on "what" or "how" rather than "should I"
+3. Empowers the querent to consider multiple perspectives
+4. Is specific enough to guide the reading
+
+Respond with ONLY the refined question, nothing else.`;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-3-5-sonnet-20241022',
+    max_tokens: 150,
+    messages: [
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+  });
+
+  return message.content[0].type === 'text' ? message.content[0].text : question;
+}
+
+// Generate follow-up question answer
+export async function answerFollowUpQuestion(
+  originalInterpretation: string,
+  cardsContext: CardContext[],
+  spreadName: string,
+  followUpQuestion: string
+): Promise<string> {
+  const prompt = `You previously provided this tarot reading interpretation:
+
+${originalInterpretation}
+
+The reading used the ${spreadName} spread with these cards:
+${cardsContext.map((c, i) => `Position ${i + 1}: ${c.card}${c.reversed ? ' (Reversed)' : ''} - ${c.position}`).join('\n')}
+
+The querent now asks: "${followUpQuestion}"
+
+Provide a focused, direct answer to this follow-up question based on the cards and your original interpretation. Keep it to 1-2 paragraphs.`;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-3-5-sonnet-20241022',
+    max_tokens: 512,
+    messages: [
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+  });
+
+  return message.content[0].type === 'text' ? message.content[0].text : '';
+}
+
+// Get specific card explanation in context
+export async function explainCardInContext(
+  cardContext: CardContext,
+  spreadName: string,
+  question?: string
+): Promise<string> {
+  const prompt = `In a ${spreadName} reading${question ? ` about "${question}"` : ''}, explain the significance of:
+
+Card: ${cardContext.card}${cardContext.reversed ? ' (Reversed)' : ''}
+Position: ${cardContext.position}
+Position Meaning: ${cardContext.positionMeaning}
+Card Keywords: ${cardContext.keywords.join(', ')}
+
+Provide a focused explanation (2-3 paragraphs) of what this specific card means in this specific position.`;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-3-5-sonnet-20241022',
+    max_tokens: 512,
     messages: [
       {
         role: 'user',
