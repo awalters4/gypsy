@@ -26,7 +26,7 @@ export default function TarotReading() {
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [customCardInput, setCustomCardInput] = useState('');
   const [spreadImage, setSpreadImage] = useState<string>('');
-  const [result, setResult] = useState<InterpretationResponse | null>(null);
+  const [_result, setResult] = useState<InterpretationResponse | null>(null);
   const [streamingText, setStreamingText] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [readingId, setReadingId] = useState<number | null>(null);

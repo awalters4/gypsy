@@ -1,282 +1,273 @@
-# Gypsy - Tarot Reading Application
+# Gypsy Mobile 🔮📱
 
-A full-stack web application for AI-powered tarot card readings. Gypsy provides personalized tarot interpretations using advanced AI, supporting both random card draws and manual selection with physical card image uploads.
+React Native mobile app for Gypsy - the AI-powered tarot reading platform.
 
-## Overview
+## About
 
-Gypsy is a complete tarot reading platform that combines traditional tarot wisdom with modern AI technology. Users can perform readings using various spread types, receive AI-generated interpretations, and track their reading history.
+Gypsy Mobile brings the power of AI-enhanced tarot readings to your iOS and Android devices. Built with React Native and Expo, it connects to the same backend API as the web version to provide personalized tarot interpretations powered by Claude AI.
 
 ## Features
 
-### Reading Modes
-- **Random Draw Mode**: Automatically draws random cards from the selected tarot deck
-- **Custom Reading Mode**: Input your own card readings
-  - Type in card names (one per line) from your physical deck
-  - Indicate reversed cards by adding "(reversed)" after the card name
-  - Upload a single photo of your entire card spread for visual reference
-  - Perfect for users who prefer traditional card readings with AI-powered interpretation
+✨ **AI-Powered Readings**
+- Streaming interpretations from Claude AI
+- Multiple tone preferences (warm, direct, mystical, analytical)
+- Context-aware card explanations
 
-### Core Features
-- **Multiple Spread Types**: Support for various spreads including:
-  - Single Card readings
-  - 3-Card spreads (Past, Present, Future)
-  - Celtic Cross
-  - And more custom spread configurations
-- **Deck Support**: Currently includes the Rider-Waite tarot deck with full card meanings
-- **AI-Powered Interpretations**: Contextual, personalized readings based on:
-  - Selected cards and positions
-  - Card orientation (upright/reversed)
-  - User's question or intention
-  - Spread-specific position meanings
-- **Reading History**: All readings are stored in the database for future reference
-- **Feedback System**: Rate and provide feedback on readings for quality tracking
+🎴 **Multiple Decks**
+- Rider-Waite (Traditional)
+- Marseille Tarot (Classic French)
+- Thoth Tarot (Crowley's Occult)
+- Wild Unknown (Nature & Animals)
+- Modern Witch (Contemporary Urban)
+
+📐 **Spread Types**
+- Single Card
+- 3-Card (Past, Present, Future)
+- Celtic Cross
+- And more
+
+🎨 **Beautiful UI**
+- Dark themed interface
+- Smooth animations
+- Intuitive navigation
+- Responsive design
 
 ## Tech Stack
 
-### Backend
-- **Runtime**: Node.js with Express framework
-- **Language**: TypeScript for type safety
-- **Database**: PostgreSQL 14+ with full schema and seed data
-- **AI Integration**: Anthropic API for natural language interpretation generation
-- **Architecture**: RESTful API design with proper error handling and CORS support
+- **React Native** - Cross-platform mobile framework
+- **Expo** - Development platform and toolchain
+- **TypeScript** - Type-safe code
+- **React Navigation** - Native navigation
+- **Axios** - API client
+- **Claude AI** - Natural language interpretations
 
-### Frontend
-- **Framework**: React 19+ with TypeScript
-- **Build Tool**: Vite for fast development and optimized builds
-- **Styling**: Custom CSS with dark theme and responsive design
-- **State Management**: React hooks (useState, useEffect)
-- **File Handling**: Native FileReader API for image uploads
+## Prerequisites
 
-### Development
-- **Backend Dev Server**: Nodemon with tsx for hot reload
-- **Frontend Dev Server**: Vite dev server with HMR (Hot Module Replacement)
-- **Type Checking**: TypeScript strict mode across both frontend and backend
-
-## Setup Instructions
-
-### Prerequisites
 - Node.js 18+
-- PostgreSQL 14+
-- Anthropic API key
+- npm or yarn
+- Expo CLI (`npm install -g expo-cli`)
+- iOS Simulator (Mac only) or Android Studio
+- Expo Go app (for testing on physical devices)
 
-### Database Setup
+## Setup
 
-1. Create a PostgreSQL database:
-```bash
-createdb tarot_reader
-```
+### 1. Install Dependencies
 
-2. Run the schema:
-```bash
-psql tarot_reader < backend/src/database/schema.sql
-```
-
-3. Seed the database:
-```bash
-psql tarot_reader < backend/src/database/seeds/001_initial_seed.sql
-psql tarot_reader < backend/src/database/seeds/002_card_meanings.sql
-psql tarot_reader < backend/src/database/seeds/003_spread_types.sql
-```
-
-### Backend Setup
-
-1. Navigate to backend directory:
-```bash
-cd backend
-```
-
-2. Create `.env` file:
-```bash
-cp .env.example .env
-```
-
-3. Edit `.env` and add your credentials:
-```
-PORT=3001
-DATABASE_URL=postgresql://localhost:5432/tarot_reader
-ANTHROPIC_API_KEY=your_api_key_here
-NODE_ENV=development
-```
-
-4. Start the development server:
-```bash
-npm run dev
-```
-
-The API will be available at `http://localhost:3001`
-
-### Frontend Setup
-
-1. Navigate to frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Start the development server:
+### 2. Configure API Endpoint
+
+Edit `src/services/api.ts` and set your API URL:
+
+```typescript
+const API_BASE_URL = __DEV__
+  ? 'http://YOUR_LOCAL_IP:3001/api'  // Replace with your computer's local IP
+  : 'https://tarot-reader.vercel.app/api';
+```
+
+**Finding your local IP:**
+- **Mac**: System Preferences → Network
+- **Windows**: `ipconfig` in Command Prompt
+- **Linux**: `ifconfig` or `ip addr`
+
+**Example**: `http://192.168.1.100:3001/api`
+
+### 3. Start the Backend
+
+Make sure the Gypsy API backend is running:
+
 ```bash
+# In the main gypsy repo
+cd backend
 npm run dev
 ```
 
-The app will be available at `http://localhost:5174` (or next available port)
+The API should be running at `http://localhost:3001`
 
-## How to Use
+## Running the App
 
-### Performing a Reading
+### Start Expo Development Server
 
-#### Random Draw Mode (Default)
-1. Open the application in your browser
-2. Select a tarot deck from the dropdown (currently Rider-Waite)
-3. Choose a spread type (e.g., 3-Card, Celtic Cross)
-4. Optionally, enter a question or intention for the reading
-5. Click "Draw Cards" to randomly select cards
-6. Review the drawn cards with their positions and meanings
-7. Click "Get Interpretation" to receive an AI-generated reading
-8. Read your personalized interpretation
-9. Click "New Reading" to start fresh
+```bash
+npm start
+```
 
-#### Custom Reading Mode
-1. Click the "Custom Reading" button at the top
-2. Select a tarot deck (optional - helps with card matching)
-3. Type your cards in the text area, one per line:
-   ```
-   The Fool
-   The Magician (reversed)
-   The High Priestess
-   ```
-4. Optionally upload a photo of your entire card spread
-5. Click "Submit Reading"
-6. Review your cards with their meanings
-7. Click "Get Interpretation" for your AI-powered reading
-8. View the interpretation alongside your uploaded spread photo
+This opens the Expo Developer Tools in your browser.
 
-**Card Input Format:**
-- Enter card names exactly as they appear (e.g., "The Fool", "Ace of Cups")
-- Add "(reversed)" or "- reversed" after the card name for reversed cards
-- One card per line
-- The app will automatically match card names from the database
+### Run on iOS Simulator (Mac only)
 
-## API Endpoints
+```bash
+npm run ios
+```
 
-### Cards
-- `GET /api/cards` - Get all cards (optionally filter by deckId)
-- `GET /api/cards/:id` - Get specific card details
+Or press `i` in the Expo Developer Tools.
 
-### Decks
-- `GET /api/decks` - Get all decks
-- `GET /api/decks/:id` - Get specific deck
+### Run on Android Emulator
 
-### Spreads
-- `GET /api/spreads` - Get all spread types
-- `GET /api/spreads/:id` - Get specific spread type
+```bash
+npm run android
+```
 
-### Readings
-- `GET /api/readings` - Get all readings
-- `POST /api/readings` - Create a new reading
-- `GET /api/readings/:id` - Get specific reading
-- `POST /api/readings/:id/feedback` - Submit feedback for a reading
+Or press `a` in the Expo Developer Tools.
 
-### Interpretation
-- `POST /api/interpret` - Generate AI interpretation for cards
-  ```json
-  {
-    "spreadTypeId": 1,
-    "deckId": 1,
-    "question": "What should I focus on today?",
-    "cardsDrawn": [
-      {"cardId": 1, "position": 1, "reversed": false}
-    ]
-  }
-  ```
+Make sure Android Studio is installed and an emulator is running.
 
-## Database Schema
+### Run on Physical Device
 
-- `decks` - Tarot deck information
-- `cards` - Individual card data (deck-agnostic)
-- `card_meanings` - Deck-specific card interpretations
-- `card_images` - URLs to card images
-- `spread_types` - Different reading layouts
-- `users` - User accounts (optional)
-- `readings` - Stored reading sessions
-- `reading_feedback` - User feedback for learning
+1. Install **Expo Go** from App Store (iOS) or Play Store (Android)
+2. Scan the QR code shown in the terminal or Expo Developer Tools
+3. App will load on your device
 
-## Project Status
-
-### Completed Features ✅
-- Full-stack application setup (React + Node.js + PostgreSQL)
-- Complete database schema with seed data
-- Rider-Waite tarot deck with all 78 cards and meanings
-- Multiple spread types (Single Card, 3-Card, Celtic Cross, etc.)
-- Random card draw functionality
-- Custom reading input mode (text-based card entry)
-- Single spread photo upload capability
-- AI-powered interpretation generation
-- Intelligent card name parsing (handles reversed notation)
-- Reading storage and history
-- Feedback system foundation
-- Responsive dark-themed UI
-- TypeScript across frontend and backend
-- RESTful API with full CRUD operations
-
-### In Progress 🚧
-- Enhanced learning algorithm based on feedback data
-- User authentication and accounts
-- Reading journal features
-
-### Planned Features 📋
-- Additional tarot deck support (add your own decks)
-- Daily card notifications/reminders
-- Export readings as PDF
-- Social sharing capabilities
-- Analytics dashboard for reading patterns
-- Mobile-responsive improvements
-- Deck management UI for adding custom decks
-- Card image hosting integration
-- Advanced filtering for reading history
+**Note**: Your phone and computer must be on the same WiFi network.
 
 ## Project Structure
 
 ```
-tarot-reader/
-├── backend/
-│   ├── src/
-│   │   ├── database/
-│   │   │   ├── schema.sql          # Database schema
-│   │   │   ├── db.ts               # Database connection
-│   │   │   └── seeds/              # Seed data files
-│   │   ├── routes/                 # API route handlers
-│   │   │   ├── cards.ts
-│   │   │   ├── decks.ts
-│   │   │   ├── spreads.ts
-│   │   │   ├── readings.ts
-│   │   │   └── interpret.ts
-│   │   ├── services/
-│   │   │   └── interpretationService.ts  # AI integration
-│   │   └── index.ts                # Express app entry
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── TarotReading.tsx    # Main reading component
-│   │   ├── services/
-│   │   │   └── api.ts              # API client
-│   │   ├── types/
-│   │   │   └── index.ts            # TypeScript interfaces
-│   │   ├── App.tsx
-│   │   ├── App.css
-│   │   └── main.tsx
-│   ├── package.json
-│   └── vite.config.ts
-│
-└── README.md
+gypsy-mobile/
+├── src/
+│   ├── screens/
+│   │   ├── HomeScreen.tsx          # Deck & spread selection
+│   │   ├── ReadingScreen.tsx       # Card drawing
+│   │   └── ResultsScreen.tsx       # AI interpretation
+│   ├── services/
+│   │   └── api.ts                  # API client
+│   ├── types/
+│   │   └── index.ts                # TypeScript types
+│   ├── components/                 # Reusable components
+│   └── constants/
+│       └── theme.ts                # Colors, spacing, etc.
+├── App.tsx                         # Main app & navigation
+├── app.json                        # Expo configuration
+└── package.json                    # Dependencies
 ```
+
+## Screens
+
+### 1. Home Screen
+- Choose your tarot deck
+- Select spread type
+- Optionally enter a question
+- Begin reading
+
+### 2. Reading Screen
+- View drawn cards
+- See position meanings
+- Check for reversed cards
+- Request AI interpretation
+
+### 3. Results Screen
+- Read personalized interpretation
+- Review cards in the reading
+- Start a new reading
+
+## Configuration
+
+### API Base URL
+
+Development (local testing):
+```typescript
+'http://192.168.1.100:3001/api'  // Your computer's local IP
+```
+
+Production (deployed app):
+```typescript
+'https://tarot-reader.vercel.app/api'
+```
+
+### Theme Customization
+
+Edit `src/constants/theme.ts` to customize:
+- Colors
+- Spacing
+- Font sizes
+- Border radius
+- Shadows
+
+## Building for Production
+
+### iOS (Requires Mac + Apple Developer Account)
+
+```bash
+# Build with EAS
+eas build --platform ios
+
+# Or create local build
+expo build:ios
+```
+
+### Android
+
+```bash
+# Build with EAS
+eas build --platform android
+
+# Or create local build
+expo build:android
+```
+
+## Related Projects
+
+- **[gypsy](https://github.com/awalters4/gypsy)** - Web app + Backend API (monorepo)
+- **[gypsy-mobile](https://github.com/well-walt-studios/gypsy-mobile)** - This mobile app
+
+## API Documentation
+
+See the main [Gypsy repository](https://github.com/awalters4/gypsy) for complete API documentation.
+
+### Key Endpoints Used
+
+- `GET /api/decks` - Get all tarot decks
+- `GET /api/spreads` - Get all spread types
+- `GET /api/cards` - Get cards (optionally filtered by deck)
+- `POST /api/interpret` - Get AI interpretation
+- `POST /api/readings` - Create a reading record
+
+## Development Tips
+
+### Debugging
+
+- Shake your device to open the dev menu
+- Enable Remote JS Debugging
+- Use React Native Debugger
+
+### Hot Reload
+
+Code changes automatically reload in the app. If something breaks:
+- Press `r` in terminal to reload
+- Or shake device → Reload
+
+### Common Issues
+
+**"Unable to resolve module"**
+- Clear cache: `expo start -c`
+- Reinstall: `rm -rf node_modules && npm install`
+
+**"Network request failed"**
+- Check API URL in `api.ts`
+- Ensure backend is running
+- Verify phone and computer are on same network
+- Use your local IP, not `localhost`
+
+**iOS/Android build fails**
+- Update Expo: `npm install expo@latest`
+- Clear cache: `expo start -c`
+
+## Contributing
+
+This is a companion app to the main Gypsy project. See the main repo for contribution guidelines.
 
 ## License
 
 MIT
+
+## Support
+
+For issues or questions:
+- Open an issue on GitHub
+- Check the main [Gypsy repository](https://github.com/awalters4/gypsy)
+
+---
+
+Made with 💜 by Well Walt Studios
