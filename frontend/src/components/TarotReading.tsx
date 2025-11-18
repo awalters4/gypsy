@@ -650,7 +650,7 @@ export default function TarotReading() {
                   onMouseEnter={() => setHoveredCard(drawnCard.position)}
                   onMouseLeave={() => setHoveredCard(null)}
                   onClick={() => readingId && explainCard(drawnCard.position)}
-                  title={readingId ? 'Click for detailed explanation' : `${card.name}\nKeywords: ${(drawnCard.reversed ? card.keywords : card.keywords).slice(0, 3).join(', ')}`}
+                  title={readingId ? 'Click for detailed explanation' : `${card.name}\nKeywords: ${(drawnCard.reversed ? card.reversed_keywords : card.upright_keywords).slice(0, 3).join(', ')}`}
                 >
                   <div className="card-position">Position {drawnCard.position}</div>
                   <h3>{card.name}</h3>

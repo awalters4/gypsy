@@ -6,7 +6,8 @@ export interface Card {
   arcana: string;
   upright_meaning: string;
   reversed_meaning: string;
-  keywords: string[];
+  upright_keywords: string[];
+  reversed_keywords: string[];
   image_url: string | null;
   deck_id: number;
 }
