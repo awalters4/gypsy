@@ -6,7 +6,7 @@ const router = Router();
 // Get all decks
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const result = await pool.query('SELECT * FROM decks ORDER BY name');
+    const result = await pool.query('SELECT DISTINCT ON (name) * FROM decks ORDER BY name, id');
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching decks:', error);
