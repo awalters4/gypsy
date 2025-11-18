@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import MobileAppTeaser from './MobileAppTeaser';
 import type {
   Deck,
   SpreadType,
@@ -47,6 +48,7 @@ export default function TarotReading() {
   const [cardExplanation, setCardExplanation] = useState<string | null>(null);
   const [loadingCardExplanation, setLoadingCardExplanation] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [showMobileModal, setShowMobileModal] = useState(true);
 
   // Load initial data
   useEffect(() => {
@@ -417,7 +419,18 @@ export default function TarotReading() {
 
   return (
     <div className="tarot-reading">
-      <h1>Gypsy</h1>
+      <h1><span className="title-text">Gypsy</span></h1>
+      <p className="subtitle">Discover your path through the ancient wisdom of tarot</p>
+
+      <div className="site-description">
+        <p>
+          Draw cards for a random reading, or ask a specific question for personalized guidance on love, career, personal growth, or any area of your life.
+          Each reading combines traditional tarot symbolism with AI-powered insights.
+        </p>
+        <p className="disclaimer">
+          ⚠️ <em>For entertainment purposes only. Tarot readings are not a substitute for professional advice on medical, legal, or financial matters.</em>
+        </p>
+      </div>
 
       {error && (
         <div className="error">
@@ -446,69 +459,100 @@ export default function TarotReading() {
           className={mode === 'random' ? 'active' : ''}
           onClick={() => handleModeChange('random')}
         >
-          Random Draw
+          🎴 Random Draw
         </button>
         <button
           className={mode === 'custom' ? 'active' : ''}
           onClick={() => handleModeChange('custom')}
+          disabled={true}
+          title="Coming soon"
         >
-          Custom Reading
+          📝 Custom Reading
         </button>
       </div>
 
       <div className="settings">
         <div className="form-group">
-          <label htmlFor="deck">Select Deck:</label>
-          <select
-            id="deck"
-            value={selectedDeck || ''}
-            onChange={(e) => setSelectedDeck(Number(e.target.value))}
-            disabled={loading}
-          >
-            <option value="">Choose a deck...</option>
-            {decks.map((deck) => (
-              <option key={deck.id} value={deck.id}>
-                {deck.name}
-              </option>
-            ))}
-          </select>
+          <label htmlFor="deck">🎴 Select Deck:</label>
+          <div className="deck-selection">
+            {decks.map((deck) => {
+              const imageName = deck.name.toLowerCase().replace(/\s+/g, '-').replace(/[''']/g, '');
+              return (
+                <div
+                  key={deck.id}
+                  className={`deck-card ${selectedDeck === deck.id ? 'selected' : ''}`}
+                  onClick={() => !loading && setSelectedDeck(deck.id)}
+                >
+                  <div className="deck-image-container">
+                    <img
+                      src={`/decks/${imageName}.jpeg`}
+                      alt={deck.name}
+                      className="deck-image"
+                      onError={(e) => {
+                        console.log(`Failed to load image for ${deck.name}: /decks/${imageName}.jpeg`);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <h4>{deck.name}</h4>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="form-group">
-          <label htmlFor="spread">Select Spread:</label>
-          <select
-            id="spread"
-            value={selectedSpread || ''}
-            onChange={(e) => setSelectedSpread(Number(e.target.value))}
-            disabled={loading}
-          >
-            <option value="">Choose a spread...</option>
-            {spreads.map((spread) => (
-              <option key={spread.id} value={spread.id}>
-                {spread.name} ({spread.position_count} cards)
-              </option>
-            ))}
-          </select>
+          <label htmlFor="spread">✨ Select Spread:</label>
+          <div className="spread-selection">
+            {spreads.map((spread) => {
+              const getSpreadDescription = (name: string) => {
+                const descriptions: Record<string, string> = {
+                  'Single Card': 'Quick insight or daily guidance on a single question or situation.',
+                  'Three Card': 'Past influences, present situation, and future outcome.',
+                  'Celtic Cross': 'Comprehensive 10-card layout revealing deep insights into complex situations, including hidden influences and potential outcomes.',
+                  'Relationship': 'Explore the dynamics between two people, revealing perspectives, challenges, and the relationship\'s potential.',
+                  'Career Path': 'Navigate professional decisions with insights on current position, obstacles, opportunities, and best path forward.'
+                };
+                return descriptions[name] || spread.description || '';
+              };
+
+              return (
+                <div
+                  key={spread.id}
+                  className={`spread-card ${selectedSpread === spread.id ? 'selected' : ''}`}
+                  onClick={() => !loading && setSelectedSpread(spread.id)}
+                >
+                  <div className="spread-header">
+                    <h4>{spread.name}</h4>
+                    <span className="card-count">{spread.position_count}</span>
+                  </div>
+                  <p className="spread-card-description">{getSpreadDescription(spread.name)}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="tone">Interpretation Style:</label>
-          <select
-            id="tone"
-            value={tone}
-            onChange={(e) => setTone(e.target.value as TonePreference)}
-            disabled={loading}
-          >
-            {Object.entries(toneDescriptions).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {drawnCards.length > 0 && !streamingText && !readingId && (
+          <div className="form-group">
+            <label htmlFor="tone">🎭 Interpretation Style:</label>
+            <select
+              id="tone"
+              value={tone}
+              onChange={(e) => setTone(e.target.value as TonePreference)}
+              disabled={loading}
+            >
+              {Object.entries(toneDescriptions).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="form-group question-group">
-          <label htmlFor="question">Your Question (optional):</label>
+          <label htmlFor="question">❓ Your Question (optional):</label>
           <div className="question-input-wrapper">
             <input
               id="question"
@@ -551,7 +595,7 @@ export default function TarotReading() {
               onClick={drawCards}
               disabled={!selectedDeck || !selectedSpread || loading}
             >
-              Draw Cards
+              🎲 Draw Cards
             </button>
           )}
           {drawnCards.length > 0 && !streamingText && !readingId && (
@@ -562,19 +606,19 @@ export default function TarotReading() {
                 className="preview-btn"
                 title="Preview what the AI will see"
               >
-                Preview AI Context
+                👁️ Preview AI Context
               </button>
               <button
                 onClick={getInterpretation}
                 disabled={loading || (cooldownUntil !== null && cooldownUntil > Date.now())}
               >
-                {loading ? 'Generating...' : cooldownUntil && cooldownUntil > Date.now() ? `Wait ${timeRemaining}` : 'Get Interpretation'}
+                {loading ? '🔮 Generating...' : cooldownUntil && cooldownUntil > Date.now() ? `⏳ Wait ${timeRemaining}` : '🔮 Get Interpretation'}
               </button>
             </>
           )}
           {(drawnCards.length > 0 || streamingText || readingId) && (
             <button onClick={resetReading} disabled={loading}>
-              New Reading
+              🔄 New Reading
             </button>
           )}
         </div>
@@ -652,7 +696,7 @@ export default function TarotReading() {
 
       {drawnCards.length > 0 && (
         <div className="drawn-cards">
-          <h2>Your Cards</h2>
+          <h2>🎴 Your Cards</h2>
           <div className="cards-grid">
             {drawnCards.map((drawnCard) => {
               const card = getCardById(drawnCard.cardId);
@@ -704,7 +748,7 @@ export default function TarotReading() {
       {/* Streaming Interpretation */}
       {(isStreaming || streamingText) && (
         <div className="interpretation">
-          <h2>Interpretation</h2>
+          <h2>🔮 Interpretation</h2>
           <div className="interpretation-text streaming">
             {streamingText}
             {isStreaming && <span className="cursor">▊</span>}
@@ -712,10 +756,14 @@ export default function TarotReading() {
         </div>
       )}
 
+      {showMobileModal && (
+        <MobileAppTeaser onClose={() => setShowMobileModal(false)} />
+      )}
+
       {/* Follow-up Questions */}
       {readingId && streamingText && !isStreaming && (
         <div className="follow-up-section">
-          <h3>Ask a Follow-up Question</h3>
+          <h3>💬 Ask a Follow-up Question</h3>
           <div className="follow-up-input-wrapper">
             <input
               type="text"
