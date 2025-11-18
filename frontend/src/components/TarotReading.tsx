@@ -419,7 +419,21 @@ export default function TarotReading() {
     <div className="tarot-reading">
       <h1>Gypsy</h1>
 
-      {error && <div className="error">{error}</div>}
+      {error && (
+        <div className="error">
+          {error.includes('AI_CREDITS_EXHAUSTED') || error.includes('credit') || error.includes('quota') ? (
+            <div>
+              <p>🔮 AI interpretations are temporarily unavailable on the web version.</p>
+              <p>📱 <strong>Download the Gypsy mobile app for full AI-powered readings!</strong></p>
+              <p style={{ fontSize: '0.9em', marginTop: '10px' }}>
+                The mobile app includes unlimited AI interpretations, personalized insights, and more features.
+              </p>
+            </div>
+          ) : (
+            error
+          )}
+        </div>
+      )}
 
       {cooldownUntil && cooldownUntil > Date.now() && (
         <div className="cooldown-notice">

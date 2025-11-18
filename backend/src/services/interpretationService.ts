@@ -167,18 +167,26 @@ export async function generateInterpretation(
   const context = await getInterpretationContext(spreadTypeId, deckId, cardsDrawn);
   const prompt = buildPrompt(context, question, tone);
 
-  const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 2048,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-  });
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 2048,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
 
-  return message.content[0].type === 'text' ? message.content[0].text : '';
+    return message.content[0].type === 'text' ? message.content[0].text : '';
+  } catch (error: any) {
+    // Handle Anthropic API errors
+    if (error.status === 429 || error.status === 402 || error.message?.includes('credit') || error.message?.includes('quota')) {
+      throw new Error('AI_CREDITS_EXHAUSTED');
+    }
+    throw error;
+  }
 }
 
 // Generate streaming interpretation
@@ -192,24 +200,32 @@ export async function* generateStreamingInterpretation(
   const context = await getInterpretationContext(spreadTypeId, deckId, cardsDrawn);
   const prompt = buildPrompt(context, question, tone);
 
-  const stream = await anthropic.messages.stream({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 2048,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-  });
+  try {
+    const stream = await anthropic.messages.stream({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 2048,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
 
-  for await (const chunk of stream) {
-    if (
-      chunk.type === 'content_block_delta' &&
-      chunk.delta.type === 'text_delta'
-    ) {
-      yield chunk.delta.text;
+    for await (const chunk of stream) {
+      if (
+        chunk.type === 'content_block_delta' &&
+        chunk.delta.type === 'text_delta'
+      ) {
+        yield chunk.delta.text;
+      }
     }
+  } catch (error: any) {
+    // Handle Anthropic API errors
+    if (error.status === 429 || error.status === 402 || error.message?.includes('credit') || error.message?.includes('quota')) {
+      throw new Error('AI_CREDITS_EXHAUSTED');
+    }
+    throw error;
   }
 }
 
@@ -225,18 +241,26 @@ Suggest a more effective way to phrase this question that:
 
 Respond with ONLY the refined question, nothing else.`;
 
-  const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 150,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-  });
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 150,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
 
-  return message.content[0].type === 'text' ? message.content[0].text : question;
+    return message.content[0].type === 'text' ? message.content[0].text : question;
+  } catch (error: any) {
+    // Handle Anthropic API errors
+    if (error.status === 429 || error.status === 402 || error.message?.includes('credit') || error.message?.includes('quota')) {
+      throw new Error('AI_CREDITS_EXHAUSTED');
+    }
+    throw error;
+  }
 }
 
 // Generate follow-up question answer
@@ -257,18 +281,26 @@ The querent now asks: "${followUpQuestion}"
 
 Provide a focused, direct answer to this follow-up question based on the cards and your original interpretation. Keep it to 1-2 paragraphs.`;
 
-  const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 512,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-  });
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 512,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
 
-  return message.content[0].type === 'text' ? message.content[0].text : '';
+    return message.content[0].type === 'text' ? message.content[0].text : '';
+  } catch (error: any) {
+    // Handle Anthropic API errors
+    if (error.status === 429 || error.status === 402 || error.message?.includes('credit') || error.message?.includes('quota')) {
+      throw new Error('AI_CREDITS_EXHAUSTED');
+    }
+    throw error;
+  }
 }
 
 // Get specific card explanation in context
@@ -286,16 +318,24 @@ Card Keywords: ${cardContext.keywords.join(', ')}
 
 Provide a focused explanation (2-3 paragraphs) of what this specific card means in this specific position.`;
 
-  const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 512,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-  });
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 512,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
 
-  return message.content[0].type === 'text' ? message.content[0].text : '';
+    return message.content[0].type === 'text' ? message.content[0].text : '';
+  } catch (error: any) {
+    // Handle Anthropic API errors
+    if (error.status === 429 || error.status === 402 || error.message?.includes('credit') || error.message?.includes('quota')) {
+      throw new Error('AI_CREDITS_EXHAUSTED');
+    }
+    throw error;
+  }
 }
